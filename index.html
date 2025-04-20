@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stack Master</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="game-container">
+    <div class="ui-container">
+      <div class="header">
+        <div class="language-selector">
+          <select id="language-select">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="pt">Português</option>
+            <option value="it">Italiano</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="zh">中文</option>
+            <option value="ru">Русский</option>
+            <option value="ar">العربية</option>
+          </select>
+        </div>
+        <button id="settings-btn">⚙️</button>
+      </div>
+      
+      <div class="score-display">
+        <div class="score-box">
+          <span data-i18n="score">SCORE</span>
+          <span id="score">0</span>
+        </div>
+        <div class="score-box">
+          <span data-i18n="best">BEST</span>
+          <span id="high-score">0</span>
+        </div>
+        <div class="score-box combo-box" id="combo-container">
+          <span data-i18n="combo">COMBO</span>
+          <span id="combo">x1</span>
+        </div>
+      </div>
+      <div class="multiplier-bar">
+        <div class="multiplier-fill" id="multiplier-fill"></div>
+      </div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <div id="start-screen" class="overlay">
+      <h1 data-i18n="title">STACK MASTER</h1>
+      <div class="difficulty-selector">
+        <button class="difficulty-btn easy active" data-difficulty="easy" data-i18n="easy">FÁCIL</button>
+        <button class="difficulty-btn medium" data-difficulty="medium" data-i18n="medium">MEDIO</button>
+        <button class="difficulty-btn hard" data-difficulty="hard" data-i18n="hard">DIFÍCIL</button>
+      </div>
+      <button id="start-btn" data-i18n="start">COMENZAR</button>
+    </div>
+    
+    <div id="game-over" class="overlay hidden">
+      <h2 data-i18n="gameOver">GAME OVER</h2>
+      <div class="results">
+        <div class="result-item">
+          <span data-i18n="score">SCORE</span>
+          <span id="final-score">0</span>
+        </div>
+        <div class="result-item">
+          <span data-i18n="best">BEST</span>
+          <span id="final-high-score">0</span>
+        </div>
+        <div class="result-item">
+          <span data-i18n="maxCombo">MAX COMBO</span>
+          <span id="final-combo">x1</span>
+        </div>
+        <div class="result-item">
+          <span data-i18n="accuracy">PRECISIÓN</span>
+          <span id="accuracy">0%</span>
+        </div>
+        <div class="result-item">
+          <span data-i18n="blocks">BLOQUES</span>
+          <span id="blocks-count">0</span>
+        </div>
+      </div>
+      <button id="restart-btn" data-i18n="restart">REINICIAR</button>
+    </div>
+
+    <div id="settings-menu" class="overlay hidden">
+      <h2 data-i18n="settings">AJUSTES</h2>
+      <div class="settings-options">
+        <div class="settings-group">
+          <h3 data-i18n="gameSettings">Configuración del Juego</h3>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-sound" checked>
+            <span class="slider"></span>
+            <span data-i18n="sound">Sonido</span>
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-particles" checked>
+            <span class="slider"></span>
+            <span data-i18n="particles">Partículas</span>
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-effects" checked>
+            <span class="slider"></span>
+            <span data-i18n="effects">Efectos</span>
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-ai" class="ai-toggle">
+            <span class="slider"></span>
+            <span data-i18n="aiMode">Modo IA</span>
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h3 data-i18n="graphicsSettings">Configuración Gráfica</h3>
+          <div class="radio-group">
+            <label data-i18n="low">Bajo</label>
+            <input type="radio" name="graphics" id="graphics-low" value="0">
+            <label data-i18n="medium">Medio</label>
+            <input type="radio" name="graphics" id="graphics-medium" value="1" checked>
+            <label data-i18n="high">Alto</label>
+            <input type="radio" name="graphics" id="graphics-high" value="2">
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3 data-i18n="developerOptions">Opciones de Desarrollador</h3>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-dev">
+            <span class="slider"></span>
+            <span data-i18n="devMode">Modo Dev</span>
+          </label>
+          <div id="dev-options" class="hidden">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-infinite">
+              <span class="slider"></span>
+              <span data-i18n="infinite">Bloques Infinitos</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-nocss">
+              <span class="slider"></span>
+              <span data-i18n="disableCss">Desactivar CSS</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-godmode">
+              <span class="slider"></span>
+              <span data-i18n="godMode">Modo Dios</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-zerog">
+              <span class="slider"></span>
+              <span data-i18n="zeroG">Gravedad Cero</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-hitboxes">
+              <span class="slider"></span>
+              <span data-i18n="showHitboxes">Mostrar Hitboxes</span>
+            </label>
+            <button id="reset-scores" class="dev-btn" data-i18n="resetScores">Resetear Puntos</button>
+            <button id="instant-win" class="dev-btn" data-i18n="instantWin">Victoria Instantánea</button>
+            <button id="spawn-debug" class="dev-btn" data-i18n="spawnDebug">Debug de Spawn</button>
+          </div>
+        </div>
+      </div>
+      <button id="back-btn" data-i18n="back">VOLVER</button>
+    </div>
+    
+    <div class="particle-container" id="particles"></div>
+    <div id="debug-info" class="debug-info hidden"></div>
+  </div>
+  
+  <script src="translations.js"></script>
+  <script src="particles.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
