@@ -268,8 +268,8 @@ function placeBlock() {
   setTimeout(() => {
     blockSpeed += currentDifficulty.acceleration;
     blockDirection = Math.random() > 0.5 ? 1 : -1;
-    createNewBlock();
     isMoving = true;
+    createNewBlock();
     isFalling = false;
   }, 300);
 
@@ -291,6 +291,10 @@ function showPrecisionFeedback(block, precision, points) {
   feedback.style.top = `${block.y - cameraOffset}px`;
   document.querySelector('.game-container').appendChild(feedback);
   setTimeout(() => feedback.remove(), 1000);
+}
+
+function getHighestY() {
+  return Math.min(...boxes.map(block => block.y));
 }
 
 function updateBlocks(timestamp) {
@@ -319,8 +323,15 @@ function updateBlocks(timestamp) {
     }
   }
 
-  const targetCameraY = boxes[currentBlockIndex].y - canvas.height * 0.7;
-  cameraOffset = Math.min(targetCameraY, cameraOffset);
+  const highestY = getHighestY();
+  const cameraTriggerHeight = canvas.height - 200;
+  let desiredCameraOffset = 0;
+
+  if (highestY < cameraTriggerHeight) {
+    desiredCameraOffset = cameraTriggerHeight - highestY;
+  }
+
+  cameraOffset += (desiredCameraOffset - cameraOffset) * 0.1;
   cameraOffset = Math.max(cameraOffset, 0);
 }
 
