@@ -70,9 +70,9 @@ let cameraOffset = 0;
 let perfectLanding = false;
 let godMode = false;
 let zeroGravity = false;
-const CAMERA_TRIGGER = 150;
-const CAMERA_TARGET = 250;
-const CAMERA_SPEED = 0.1;
+let blockCounter = 0;
+const BLOCKS_PER_CAMERA_MOVE = 8;
+const CAMERA_JUMP = 50;
 
 const particleSystem = new ParticleSystem(elements.particleContainer);
 const sounds = {
@@ -141,6 +141,7 @@ function startGame() {
   totalBlocks = 0;
   perfectBlocks = 0;
   cameraOffset = 0;
+  blockCounter = 0;
   blockSpeed = currentDifficulty.speed;
   blockDirection = Math.random() > 0.5 ? 1 : -1;
   isMoving = true;
@@ -247,13 +248,13 @@ function placeBlock() {
   if (totalOverlap > 0) {
     debris.push({
       x: currentBlock.x,
-      y: currentBlock.y - cameraOffset,
+      y: currentBlock.y + cameraOffset,
       width: overlapLeft,
       height: currentBlock.height,
       color: currentBlock.color
     },{
       x: newX + newWidth,
-      y: currentBlock.y - cameraOffset,
+      y: currentBlock.y + cameraOffset,
       width: overlapRight,
       height: currentBlock.height,
       color: currentBlock.color
@@ -264,6 +265,11 @@ function placeBlock() {
   currentBlock.width = newWidth;
   currentBlock.y = currentBlock.targetY;
   perfectLanding = false;
+
+  blockCounter++;
+  if (blockCounter % BLOCKS_PER_CAMERA_MOVE === 0) {
+    cameraOffset -= CAMERA_JUMP;
+  }
 
   setTimeout(() => {
     blockSpeed += currentDifficulty.acceleration;
@@ -276,7 +282,7 @@ function placeBlock() {
   if (elements.toggleParticles.checked) {
     particleSystem.emit(
       currentBlock.x + currentBlock.width / 2,
-      currentBlock.y - cameraOffset,
+      currentBlock.y + cameraOffset,
       currentBlock.color,
       20
     );
@@ -288,7 +294,7 @@ function showPrecisionFeedback(block, precision, points) {
   feedback.className = `accuracy-feedback ${precision.class}`;
   feedback.textContent = `${precision.text} +${points}`;
   feedback.style.left = `${block.x + block.width / 2}px`;
-  feedback.style.top = `${block.y - cameraOffset}px`;
+  feedback.style.top = `${block.y + cameraOffset}px`;
   document.querySelector('.game-container').appendChild(feedback);
   setTimeout(() => feedback.remove(), 1000);
 }
@@ -318,18 +324,6 @@ function updateBlocks(timestamp) {
       placeBlock();
     }
   }
-
-  const highestBlockY = Math.min(...boxes.map(b => b.y));
-  const basePosition = canvas.height - CAMERA_TARGET;
-  
-  if (highestBlockY < basePosition) {
-    const desiredOffset = basePosition - highestBlockY;
-    cameraOffset += (desiredOffset - cameraOffset) * CAMERA_SPEED;
-  } else {
-    cameraOffset *= 0.95;
-  }
-  
-  cameraOffset = Math.max(cameraOffset, 0);
 }
 
 function gameOver() {
@@ -362,7 +356,7 @@ function drawBackground() {
 
 function drawBoxes() {
   boxes.forEach((block, i) => {
-    const yPos = block.y - cameraOffset;
+    const yPos = block.y + cameraOffset;
     
     if (yPos + block.height < -50 || yPos > canvas.height + 50) return;
     
