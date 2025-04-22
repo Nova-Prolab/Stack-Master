@@ -66,13 +66,14 @@ let gameStartTime = 0;
 let currentPrecision = null;
 let aiMode = false;
 let aiTimeout = null;
-let cameraOffset = 0;
 let perfectLanding = false;
 let godMode = false;
 let zeroGravity = false;
 let blockCounter = 0;
-const BLOCKS_PER_CAMERA_MOVE = 8;
+let targetCameraOffset = 0;
+let currentCameraOffset = 0;
 const CAMERA_JUMP = 50;
+const CAMERA_SMOOTHNESS = 0.1;
 
 const particleSystem = new ParticleSystem(elements.particleContainer);
 const sounds = {
@@ -140,8 +141,9 @@ function startGame() {
   multiplierProgress = 0;
   totalBlocks = 0;
   perfectBlocks = 0;
-  cameraOffset = 0;
   blockCounter = 0;
+  targetCameraOffset = 0;
+  currentCameraOffset = 0;
   blockSpeed = currentDifficulty.speed;
   blockDirection = Math.random() > 0.5 ? 1 : -1;
   isMoving = true;
@@ -248,13 +250,13 @@ function placeBlock() {
   if (totalOverlap > 0) {
     debris.push({
       x: currentBlock.x,
-      y: currentBlock.y + cameraOffset,
+      y: currentBlock.y - currentCameraOffset,
       width: overlapLeft,
       height: currentBlock.height,
       color: currentBlock.color
     },{
       x: newX + newWidth,
-      y: currentBlock.y + cameraOffset,
+      y: currentBlock.y - currentCameraOffset,
       width: overlapRight,
       height: currentBlock.height,
       color: currentBlock.color
@@ -267,8 +269,8 @@ function placeBlock() {
   perfectLanding = false;
 
   blockCounter++;
-  if (blockCounter % BLOCKS_PER_CAMERA_MOVE === 0) {
-    cameraOffset -= CAMERA_JUMP;
+  if (blockCounter % 8 === 0) {
+    targetCameraOffset += CAMERA_JUMP;
   }
 
   setTimeout(() => {
@@ -282,7 +284,7 @@ function placeBlock() {
   if (elements.toggleParticles.checked) {
     particleSystem.emit(
       currentBlock.x + currentBlock.width / 2,
-      currentBlock.y + cameraOffset,
+      currentBlock.y - currentCameraOffset,
       currentBlock.color,
       20
     );
@@ -294,7 +296,7 @@ function showPrecisionFeedback(block, precision, points) {
   feedback.className = `accuracy-feedback ${precision.class}`;
   feedback.textContent = `${precision.text} +${points}`;
   feedback.style.left = `${block.x + block.width / 2}px`;
-  feedback.style.top = `${block.y + cameraOffset}px`;
+  feedback.style.top = `${block.y - currentCameraOffset}px`;
   document.querySelector('.game-container').appendChild(feedback);
   setTimeout(() => feedback.remove(), 1000);
 }
@@ -302,6 +304,8 @@ function showPrecisionFeedback(block, precision, points) {
 function updateBlocks(timestamp) {
   const deltaTime = timestamp - lastTimestamp;
   lastTimestamp = timestamp;
+
+  currentCameraOffset += (targetCameraOffset - currentCameraOffset) * CAMERA_SMOOTHNESS;
 
   if (isMoving) {
     const currentBlock = boxes[currentBlockIndex];
@@ -356,7 +360,7 @@ function drawBackground() {
 
 function drawBoxes() {
   boxes.forEach((block, i) => {
-    const yPos = block.y + cameraOffset;
+    const yPos = block.y - currentCameraOffset;
     
     if (yPos + block.height < -50 || yPos > canvas.height + 50) return;
     
