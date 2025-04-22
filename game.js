@@ -70,6 +70,8 @@ let cameraOffset = 0;
 let perfectLanding = false;
 let godMode = false;
 let zeroGravity = false;
+const CAMERA_TRIGGER_HEIGHT = 300;
+const CAMERA_SMOOTHNESS = 0.05;
 
 const particleSystem = new ParticleSystem(elements.particleContainer);
 const sounds = {
@@ -113,13 +115,10 @@ function startAIMove() {
   if (!aiMode || !isMoving || gameState !== GAME_STATES.PLAYING) return;
   const currentBlock = boxes[currentBlockIndex];
   const previousBlock = boxes[currentBlockIndex - 1];
-  const targetX = previousBlock.x;
-  const currentX = currentBlock.x;
-  const direction = blockDirection > 0 ? 1 : -1;
-  const distanceToTarget = direction === 1 ? 
-    (targetX - currentX + canvas.width) % canvas.width : 
-    (currentX - targetX + canvas.width) % canvas.width;
-  const timeToPerfect = (distanceToTarget * 16) / blockSpeed;
+  const targetCenterX = previousBlock.x + previousBlock.width / 2;
+  const currentCenterX = currentBlock.x + currentBlock.width / 2;
+  const distanceToPerfect = targetCenterX - currentCenterX;
+  const timeToPerfect = (Math.abs(distanceToPerfect) * 16) / blockSpeed;
   aiTimeout = setTimeout(() => {
     if (isMoving && aiMode) {
       perfectLanding = true;
@@ -324,15 +323,14 @@ function updateBlocks(timestamp) {
   }
 
   const highestY = getHighestY();
-  const cameraTriggerHeight = canvas.height - 200;
-  let desiredCameraOffset = 0;
-
-  if (highestY < cameraTriggerHeight) {
-    desiredCameraOffset = cameraTriggerHeight - highestY;
+  const cameraThreshold = canvas.height - CAMERA_TRIGGER_HEIGHT;
+  
+  if (highestY < cameraThreshold) {
+    const desiredOffset = cameraThreshold - highestY;
+    cameraOffset += (desiredOffset - cameraOffset) * CAMERA_SMOOTHNESS;
   }
-
-  cameraOffset += (desiredCameraOffset - cameraOffset) * 0.1;
-  cameraOffset = Math.max(cameraOffset, 0);
+  
+  cameraOffset = Math.min(cameraOffset, canvas.height * 2);
 }
 
 function gameOver() {
@@ -366,16 +364,20 @@ function drawBackground() {
 function drawBoxes() {
   boxes.forEach((block, i) => {
     const yPos = block.y - cameraOffset;
-    if (yPos + block.height < -50 || yPos > canvas.height + 50) return;
+    const maxCamera = canvas.height - 150;
+    const finalYPos = yPos - Math.max(0, cameraOffset - maxCamera);
+    
+    if (finalYPos + block.height < -50 || finalYPos > canvas.height + 50) return;
+    
     ctx.fillStyle = block.color;
-    ctx.fillRect(block.x, yPos, block.width, block.height);
+    ctx.fillRect(block.x, finalYPos, block.width, block.height);
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.lineWidth = 2;
-    ctx.strokeRect(block.x, yPos, block.width, block.height);
+    ctx.strokeRect(block.x, finalYPos, block.width, block.height);
     if (i === currentBlockIndex && isMoving) {
       ctx.strokeStyle = 'white';
       ctx.setLineDash([5, 5]);
-      ctx.strokeRect(block.x, yPos, block.width, block.height);
+      ctx.strokeRect(block.x, finalYPos, block.width, block.height);
       ctx.setLineDash([]);
     }
   });
