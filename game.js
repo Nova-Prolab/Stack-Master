@@ -70,8 +70,8 @@ let cameraOffset = 0;
 let perfectLanding = false;
 let godMode = false;
 let zeroGravity = false;
-const CAMERA_TRIGGER_HEIGHT = 300;
-const CAMERA_SMOOTHNESS = 0.05;
+const CAMERA_TRIGGER_HEIGHT = 500;
+const CAMERA_SMOOTHNESS = 0.08;
 
 const particleSystem = new ParticleSystem(elements.particleContainer);
 const sounds = {
@@ -162,7 +162,7 @@ function startGame() {
 function createInitialBlock() {
   boxes.push({
     x: canvas.width / 4,
-    y: canvas.height - 50,
+    y: canvas.height - 100,
     width: canvas.width / 2,
     height: 30,
     color: getRandomColor()
@@ -173,7 +173,7 @@ function createNewBlock() {
   const lastBlock = boxes[boxes.length - 1];
   boxes.push({
     x: blockDirection > 0 ? 0 : canvas.width - lastBlock.width,
-    y: lastBlock.y - 50,
+    y: -50,
     width: lastBlock.width,
     height: 30,
     color: getRandomColor(),
@@ -246,13 +246,13 @@ function placeBlock() {
   if (totalOverlap > 0) {
     debris.push({
       x: currentBlock.x,
-      y: currentBlock.y - cameraOffset,
+      y: currentBlock.y - cameraOffset + canvas.height - 100,
       width: overlapLeft,
       height: currentBlock.height,
       color: currentBlock.color
     },{
       x: newX + newWidth,
-      y: currentBlock.y - cameraOffset,
+      y: currentBlock.y - cameraOffset + canvas.height - 100,
       width: overlapRight,
       height: currentBlock.height,
       color: currentBlock.color
@@ -275,7 +275,7 @@ function placeBlock() {
   if (elements.toggleParticles.checked) {
     particleSystem.emit(
       currentBlock.x + currentBlock.width / 2,
-      currentBlock.y - cameraOffset,
+      currentBlock.y - cameraOffset + canvas.height - 100,
       currentBlock.color,
       20
     );
@@ -287,13 +287,13 @@ function showPrecisionFeedback(block, precision, points) {
   feedback.className = `accuracy-feedback ${precision.class}`;
   feedback.textContent = `${precision.text} +${points}`;
   feedback.style.left = `${block.x + block.width / 2}px`;
-  feedback.style.top = `${block.y - cameraOffset}px`;
+  feedback.style.top = `${block.y - cameraOffset + canvas.height - 100}px`;
   document.querySelector('.game-container').appendChild(feedback);
   setTimeout(() => feedback.remove(), 1000);
 }
 
-function getHighestY() {
-  return Math.min(...boxes.map(block => block.y));
+function getLowestY() {
+  return Math.max(...boxes.map(block => block.y));
 }
 
 function updateBlocks(timestamp) {
@@ -322,15 +322,15 @@ function updateBlocks(timestamp) {
     }
   }
 
-  const highestY = getHighestY();
+  const lowestY = getLowestY();
   const cameraThreshold = canvas.height - CAMERA_TRIGGER_HEIGHT;
   
-  if (highestY < cameraThreshold) {
-    const desiredOffset = cameraThreshold - highestY;
+  if (lowestY > cameraThreshold) {
+    const desiredOffset = lowestY - cameraThreshold;
     cameraOffset += (desiredOffset - cameraOffset) * CAMERA_SMOOTHNESS;
   }
   
-  cameraOffset = Math.min(cameraOffset, canvas.height * 2);
+  cameraOffset = Math.min(cameraOffset, canvas.height * 0.7);
 }
 
 function gameOver() {
@@ -349,10 +349,6 @@ function gameOver() {
     elements.highScore.textContent = highScore;
   }
 
-  if (elements.toggleEffects.checked) {
-    canvas.classList.add('shake');
-    setTimeout(() => canvas.classList.remove('shake'), 500);
-  }
   elements.gameOverScreen.classList.remove('hidden');
 }
 
@@ -363,21 +359,20 @@ function drawBackground() {
 
 function drawBoxes() {
   boxes.forEach((block, i) => {
-    const yPos = block.y - cameraOffset;
-    const maxCamera = canvas.height - 150;
-    const finalYPos = yPos - Math.max(0, cameraOffset - maxCamera);
+    const yPos = block.y - cameraOffset + canvas.height - 100;
     
-    if (finalYPos + block.height < -50 || finalYPos > canvas.height + 50) return;
+    if (yPos + block.height < -50 || yPos > canvas.height + 50) return;
     
     ctx.fillStyle = block.color;
-    ctx.fillRect(block.x, finalYPos, block.width, block.height);
+    ctx.fillRect(block.x, yPos, block.width, block.height);
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.lineWidth = 2;
-    ctx.strokeRect(block.x, finalYPos, block.width, block.height);
+    ctx.strokeRect(block.x, yPos, block.width, block.height);
+    
     if (i === currentBlockIndex && isMoving) {
       ctx.strokeStyle = 'white';
       ctx.setLineDash([5, 5]);
-      ctx.strokeRect(block.x, finalYPos, block.width, block.height);
+      ctx.strokeRect(block.x, yPos, block.width, block.height);
       ctx.setLineDash([]);
     }
   });
