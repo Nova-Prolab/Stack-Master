@@ -71,8 +71,10 @@ let godMode = false;
 let zeroGravity = false;
 let blockCounter = 0;
 let cameraOffset = 0;
+let targetCameraOffset = 0;
 const CAMERA_JUMP = 50;
-const CAMERA_SMOOTHNESS = 0.1;
+const CAMERA_SMOOTHNESS = 0.05;
+const BLOCKS_TO_MOVE_CAMERA = 5;
 
 const particleSystem = new ParticleSystem(elements.particleContainer);
 const sounds = {
@@ -140,8 +142,9 @@ function startGame() {
   multiplierProgress = 0;
   totalBlocks = 0;
   perfectBlocks = 0;
-  cameraOffset = 0;
   blockCounter = 0;
+  cameraOffset = 0;
+  targetCameraOffset = 0;
   blockSpeed = currentDifficulty.speed;
   blockDirection = Math.random() > 0.5 ? 1 : -1;
   isMoving = true;
@@ -267,8 +270,8 @@ function placeBlock() {
   perfectLanding = false;
 
   blockCounter++;
-  if (blockCounter % 8 === 0) {
-    cameraOffset += CAMERA_JUMP;
+  if (blockCounter % BLOCKS_TO_MOVE_CAMERA === 0) {
+    targetCameraOffset += CAMERA_JUMP;
   }
 
   setTimeout(() => {
@@ -302,6 +305,8 @@ function showPrecisionFeedback(block, precision, points) {
 function updateBlocks(timestamp) {
   const deltaTime = timestamp - lastTimestamp;
   lastTimestamp = timestamp;
+
+  cameraOffset += (targetCameraOffset - cameraOffset) * CAMERA_SMOOTHNESS;
 
   if (isMoving) {
     const currentBlock = boxes[currentBlockIndex];
